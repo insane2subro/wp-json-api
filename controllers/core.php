@@ -61,6 +61,14 @@ class JSON_API_Core_Controller {
   public function get_post() {
     global $json_api, $post;
     $post = $json_api->introspector->get_current_post();
+	    if ($json_api->query->cookie) {
+      $user_id = wp_validate_auth_cookie($json_api->query->cookie, 'logged_in');
+      if ($user_id) {
+        $user = get_userdata($user_id);
+
+        wp_set_current_user($user->ID, $user->user_login);
+      }
+    }
     if ($post) {
       $previous = get_adjacent_post(false, '', true);
       $next = get_adjacent_post(false, '', false);
