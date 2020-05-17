@@ -6,6 +6,7 @@ class JSON_API_Post {
   //   JSON_API_Post objects must be instantiated within The Loop.
   
   var $id;              // Integer
+  var $user;            // Object - This will report user details
   var $type;            // String
   var $slug;            // String
   var $url;             // String
@@ -126,7 +127,7 @@ class JSON_API_Post {
   }
   
   function import_wp_object($wp_post) {
-    global $json_api, $post;
+
     $date_format = $json_api->query->date_format;
     $this->id = (int) $wp_post->ID;
     setup_postdata($wp_post);
@@ -141,6 +142,7 @@ class JSON_API_Post {
     $this->set_value('date', get_the_time($date_format));
     $this->set_value('modified', date($date_format, strtotime($wp_post->post_modified)));
     $this->set_categories_value();
+	$this->get_currentuserinfo();
     $this->set_tags_value();
     $this->set_author_value($wp_post->post_author);
     $this->set_comments_value();
@@ -152,6 +154,8 @@ class JSON_API_Post {
     $this->set_custom_taxonomies($wp_post->post_type);
     do_action("json_api_import_wp_post", $this, $wp_post);
   }
+  
+
   
   function set_value($key, $value) {
     global $json_api;
@@ -192,6 +196,30 @@ class JSON_API_Post {
       unset($this->categories);
     }
   }
+  
+	function get_currentuserinfo() {
+
+		global $json_api;
+
+		if (!$json_api->query->cookie) {
+
+			$json_api->error("You must include a 'cookie' var in your request. Use the `generate_auth_cookie` Auth API method.");
+
+		}
+		
+		$user_id = wp_validate_auth_cookie($json_api->query->cookie, 'logged_in');
+		
+
+		if (!$user_id) {
+			$json_api->error("Invalid authentication cookie. Use the `generate_auth_cookie` method.");
+		}
+
+		$user = get_userdata($user_id);
+		
+		$this->user = $user;
+
+	}
+	
   
   function set_tags_value() {
     global $json_api;
